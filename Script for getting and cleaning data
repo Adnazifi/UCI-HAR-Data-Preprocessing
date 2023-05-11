@@ -1,1 +1,82 @@
+Coursera JHU Data Science Getting and Cleaning Data Project
 
+# Requirement:
+
+# Merges the training and the test sets to create one data set.
+
+# Extracts only the measurements on the mean and standard deviation for each measurement. 
+
+# Uses descriptive activity names to name the activities in the data set
+
+# Appropriately labels the data set with descriptive variable names. 
+
+# From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+
+# Download the dataset from the link provided using the urllib library in Python:
+
+import urllib.request
+
+url = "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+file_name = "UCI-HAR-dataset.zip"
+
+# Download the file from the URL and save it as 'UCI-HAR-dataset.zip'
+urllib.request.urlretrieve(url, file_name)
+
+# Extract the files from the downloaded zip file using the zipfile library:
+
+import zipfile
+
+# Extract the files from the zip file
+with zipfile.ZipFile(file_name, 'r') as zip_ref:
+    zip_ref.extractall()
+    
+# Load the necessary packages and libraries in Python. Pandas and NumPy libraries are commonly used in data preprocessing tasks.
+
+import pandas as pd
+import numpy as np    
+
+# Load the feature names and activity labels from their respective files.
+
+feature_names = pd.read_csv('UCI HAR Dataset/features.txt', header=None, delim_whitespace=True)
+activity_labels = pd.read_csv('UCI HAR Dataset/activity_labels.txt', header=None, delim_whitespace=True)
+
+# Load the training and testing data, as well as their corresponding activity and subject data.
+
+X_train = pd.read_csv('UCI HAR Dataset/train/X_train.txt', header=None, delim_whitespace=True)
+y_train = pd.read_csv('UCI HAR Dataset/train/y_train.txt', header=None, delim_whitespace=True)
+subject_train = pd.read_csv('UCI HAR Dataset/train/subject_train.txt', header=None, delim_whitespace=True)
+
+X_test = pd.read_csv('UCI HAR Dataset/test/X_test.txt', header=None, delim_whitespace=True)
+y_test = pd.read_csv('UCI HAR Dataset/test/y_test.txt', header=None, delim_whitespace=True)
+subject_test = pd.read_csv('UCI HAR Dataset/test/subject_test.txt', header=None, delim_whitespace=True)
+
+# Merge the training and testing data and assign column names.
+
+X = pd.concat([X_train, X_test], ignore_index=True)
+y = pd.concat([y_train, y_test], ignore_index=True)
+subject = pd.concat([subject_train, subject_test], ignore_index=True)
+
+X.columns = feature_names.iloc[:, 1].values
+
+# Extract only the mean and standard deviation measurements.
+
+mean_std_cols = X.filter(regex='mean|std')
+
+# Use descriptive activity names to name the activities in the data set.
+
+activity_labels_dict = dict(zip(activity_labels.iloc[:, 0], activity_labels.iloc[:, 1]))
+y['activity'] = y[0].map(activity_labels_dict)
+y = y.drop(0, axis=1)
+
+# Appropriately label the data set with descriptive variable names.
+
+mean_std_cols.columns = [col.replace('()', '').replace('-', '').replace(',', '') for col in mean_std_cols.columns]
+
+# Merge the subject, activity, and mean/std data into one dataframe.
+
+data = pd.concat([subject, y, mean_std_cols], axis=1)
+
+# Create a second, independent tidy data set with the average of each variable for each activity and each subject.
+
+tidy_data = data.groupby(['subject', 'activity']).mean()
+tidy_data.to_csv('tidy_data.csv')
